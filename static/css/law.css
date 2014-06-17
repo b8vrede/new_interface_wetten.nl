@@ -1,0 +1,112 @@
+#bodyContainer{
+    padding-top: 65px;
+}
+.panelwrapper {
+    position: fixed;
+    margin: 0px;
+    height: 100%;
+    width: 350px;
+    overflow-y:auto;
+    padding-bottom: 50px;
+}
+.selectedAtricle {
+    font-size: 0.8em;
+}
+
+#loading {
+    position: fixed;
+    z-index: 10000;
+    height: 100%;
+    width: 100%;
+    display:none;
+}
+
+#loading .loading-panel{
+    position:absolute; 
+    top:50%;
+    left: 50%;
+    margin-left:-76px;
+    margin-top:-76px;
+    width: 152px;
+    height: 152px;
+    border-radius: 15px;
+    background: #FFF;
+    box-shadow: 10px 10px 5px #888;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    padding: 12px 12px
+}
+
+#loading .loading-panel img{
+    width: 128px;
+    height: 128px;
+}
+
+well#Container{
+    margin-left: 350px;
+}
+
+#lawContainer htitle{
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 0.9em;
+    height: auto;
+    line-height: 20px;
+    width: auto;
+    color: #000;    
+    display: block;
+}
+
+#lawContainer htitle .label, #lawContainer htitle .nr, #lawContainer htitle .titel{
+    color: #000;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 1.0em;
+    font-weight: bold;
+}
+
+#lawContainer hcontainer, #lawContainer mcontainer, #lawContainer container {
+    width: inherit;
+    display: block;
+    padding: 0 0 0 0px;
+}
+
+#lawContainer hcontainer.artikel:hover{
+   border-radius: 10px;
+   padding: 0 0 0 0px;
+   background-color: #eee;
+   cursor: pointer;
+}
+#lawContainer hcontainer.artikel.active{
+   border: #eeeeee dashed 1px;
+   border-radius: 10px;
+   padding: 0 0 0 0px;
+   background-color: #e5e5e5;
+}
+
+#lawContainer container {
+    display: block;
+    padding: 0 0 10px 0px;
+
+}
+
+#lawContainer .lijst {
+    padding: 0 0 0 10px;
+}
+
+#lawContainer .li\.nr, #lawContainer .lidnr{
+    font-weight: bold;
+}
+#lawContainer .intitule{
+    font-size: 1.5em;
+    height: auto;
+    margin: 20px 0px;
+}
+
+#lawContainer inline.extref{
+    cursor: pointer;
+    color: #07c;
+}
+
+#lawContainer inline.extref:hover{
+    text-decoration:underline;
+}

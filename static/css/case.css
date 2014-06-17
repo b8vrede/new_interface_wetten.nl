@@ -1,0 +1,80 @@
+#bodyContainer{
+    padding-top: 65px;
+}
+.panelwrapper {
+    position: fixed;
+    margin: 0px;
+    height: 100%;
+    width: 350px;
+    overflow-y:auto;
+    padding-bottom: 50px;
+}
+
+#loading {
+    position: fixed;
+    z-index: 10000;
+    height: 100%;
+    width: 100%;
+    display:none;
+}
+
+#loading .loading-panel{
+    position:absolute; 
+    top:50%;
+    left: 50%;
+    margin-left:-76px;
+    margin-top:-76px;
+    width: 152px;
+    height: 152px;
+    border-radius: 15px;
+    background: #FFF;
+    box-shadow: 10px 10px 5px #888;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    padding: 12px 12px
+}
+
+#loading .loading-panel img{
+    width: 128px;
+    height: 128px;
+}
+
+well#Container{
+    margin-left: 350px;
+}
+
+#lawContainer{
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 0.9em;
+    height: auto;
+    line-height: 20px;
+    width: auto;
+    color: #000;    
+    display: block;
+}
+
+#lawContainer ns0\:title, #lawContainer ns0\:bridgehead{
+    color: #000;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 1.0em;
+    font-weight: bold;
+    display: block;
+}
+
+#lawContainer ns0\:paragroup, ns0\:parablock{
+    line-height: 20px;
+    display: block;
+    margin-bottom: 10px;
+}
+
+#lawContainer .ref{
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 1.0em;
+    color: #07c;    
+    cursor: pointer;
+}
+
+#lawContainer .ref:hover{
+    text-decoration:underline;
+}

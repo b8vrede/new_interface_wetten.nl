@@ -1,0 +1,532 @@
+'''
+Created on 6 mei 2013
+
+Parses SPARQL XML results and converts/stores them to a format
+suitable for centrality measurement (networkx graph format).
+
+The sparql results can be obtained with the following queries,
+where <BWB_ID> is replaced by actual id's of laws:
+
+For outgoing citations use:
+PREFIX mo: <http://www.metalex.eu/schema/1.0#> 
+
+SELECT DISTINCT * WHERE { 
+?e mo:realizes <http://doc.metalex.eu/id/<BWB_ID>> . 
+GRAPH ?e { 
+?c1 mo:cites ?c2 }} 
+
+For incoming citations use:
+PREFIX mo: <http://www.metalex.eu/schema/1.0#> 
+
+SELECT DISTINCT * WHERE { 
+?c1 mo:cites ?c2. 
+FILTER regex(str(?c2),"<BWB_ID>")} 
+
+@author: Ivan
+'''
+
+from xml.dom import minidom as mini
+import os
+import re
+import networkx as nx
+import time
+import pickle
+import SparqlHelper
+
+class CitesParser:
+    
+    def __init__(self, inOrOut='none', makeNetwork=False, logName=False, citesIn='../Cites_in', citesOut='../Cites_out'):
+        
+        # Get the absolute directory paths
+        self.dirName = os.path.dirname(__file__)
+        self.citesInDir = os.path.abspath(os.path.join(self.dirName, citesIn))
+        self.citesOutDir = os.path.abspath(os.path.join(self.dirName, citesOut))
+        
+        if(logName):
+            self.log = "Starting...\n"
+            self.logName = logName + ' '
+        else:
+            self.logName = False
+            
+        # Assume all citations will be parsed succesfully
+        self.encounteredUnknownPattern = False
+        
+        self.makeNetwork = makeNetwork
+        if(makeNetwork):
+            # Get lists of file names.
+            self.citeInFiles = self.getCiteFiles(self.citesInDir)
+            self.citeOutFiles = self.getCiteFiles(self.citesOutDir)
+        
+            self.G = nx.DiGraph()
+            self.workDictionary = {}
+            self.humanDescription = {}
+            self.bwbTitles = {}
+            self.sparql = SparqlHelper.SparqlHelper()
+        
+        # Parse the citations for incoming or outgoing or both or none
+        if inOrOut == 'both':
+            self.parseCitations('out')
+            self.parseCitations('in')
+        elif inOrOut == 'in' or inOrOut == 'out':
+            self.parseCitations(inOrOut)
+        
+        # Write the log to disk if logging is enabled    
+        if(logName):
+            self.writeLog()
+        
+        # Save network to disk if a network was made    
+        if(makeNetwork):
+            t = time.strftime("%Y-%m-%d_%H_%M_%S")
+            fileName = os.path.normpath("./{}/Graph_{}".format(self.dirName, t))
+            nx.write_gml(self.G, fileName + '.gml')
+            
+            pickle.dump(self.G, open(fileName + '.pickle', 'w'))
+            print '\nDumped graph at: "' + fileName + '", (.pickle and .gml)'
+            
+            
+            fileName = os.path.normpath("./{}/Work_URIs_{}.pickle".format(self.dirName, t))
+            pickle.dump(self.workDictionary, open(fileName, 'w'))
+            print '\nDumped work URIs at: "' + fileName + '"'
+            
+            fileName = os.path.normpath("./{}/bwb_titles_{}.pickle".format(self.dirName, t))
+            pickle.dump(self.bwbTitles, open(fileName, 'w'))
+            print '\nDumped BWB titles at: "' + fileName + '"'
+            
+            fileName = os.path.normpath("./{}/human_descriptions_{}.pickle".format(self.dirName, t))
+            pickle.dump(self.humanDescription, open(fileName, 'w'))
+            print '\nDumped human entity descriptions at: "' + fileName + '"'
+            
+    def getCiteFiles(self, dirPath):
+        '''
+        Retrieves all file names for xml files that start with BWB at
+        given path.
+        
+        @param dirPath: path of directory (relative or absolute)
+        @return: list of file names
+        '''
+        
+        files = []
+        # citesList = os.listdir(dirPath)
+        citesList = os.path.normpath(dirPath)
+        
+        for cites in citesList:
+            if cites.startswith('BWB') and cites.endswith('.xml'):
+                files.append(cites)
+        
+        print files     
+        return files
+    
+    def writeLog(self):
+        fileName = self.dirName + '/' + self.logName + time.ctime(time.time()) + ".txt"
+        logFile = open(fileName, 'w')
+        logFile.write(self.log)
+        logFile.close()
+        print "\nLog written to file: '" + fileName + "'"
+     
+    def parseCitations(self, inOrOut):
+        '''
+        Parses the citations in the files
+        @param inOrOut: string determining incoming ('in') or outgoing ('out')
+            citations
+        '''
+        
+        files = None
+        citesDir = None
+        if inOrOut == 'out':
+            print '\nParsing all outgoing citations...'
+            if(self.logName):
+                self.log += ('\n/------------------------------/' +
+                             '\n/----- Outgoing citations -----/' +
+                             '\n/------------------------------/')
+            files = self.citeOutFiles
+            citesDir = self.citesOutDir
+            
+        elif inOrOut == 'in':
+            print '\nParsing all incoming citations...'
+            if(self.logName):
+                self.log += ('\n/------------------------------/' +
+                             '\n/----- Incoming citations -----/' +
+                             '\n/------------------------------/')
+            files = self.citeInFiles
+            citesDir = self.citesInDir
+        else:
+            return
+        
+        # Parse each file    
+        for bwbFile in files:
+            print '\nParsing file: ' + bwbFile + '...'
+            
+            # Get xml tree for the current file
+            xml = mini.parse(citesDir + bwbFile)
+#             variables = xml.getElementsByTagName('variable')
+#             print 'Variables: '
+#             for var in variables:
+#                 print var.attributes['name'].value
+                
+            results = xml.getElementsByTagName('result')
+            print 'Number of SPARQL results: ' + str(results.length)
+            
+            if(self.logName):
+                self.log += '\n##################\nParsing file: ' + bwbFile + '...'
+                self.log += '\nNumber of SPARQL results: ' + str(results.length)
+                self.log += '\n##################'
+            print 'Handling results...'
+            
+            # Handle all results for the current file
+            for result in results:
+                bindings = result.getElementsByTagName('binding')
+                self.handleBindings(bindings, inOrOut)
+   
+    def getEncounteredUnknownPattern(self):
+        return self.encounteredUnknownPattern
+    
+    def handleBindings(self, bindings, inOrOut):
+        '''
+        Extracts the correct URI's from the bindings and
+        retrieves shorter descriptions to use as labels in the
+        network.
+        @param bindings: list of xml bindings
+        @param inOrOut: 'in' or 'out' to discriminate between
+            the structure of the bindings of incoming and outgoing
+            citations 
+        '''
+        # Get uri's for citing and cited entities
+        if inOrOut == 'out':
+            # For outgoing citations, the desired URI's are the second and third variables.
+            # Note: if SPARQL results change in format (more variables, different order),
+            #    the |bindings| indices must be changed accordingly
+            citing = bindings[1].getElementsByTagName('uri')[0].firstChild.nodeValue
+            cited = bindings[2].getElementsByTagName('uri')[0].firstChild.nodeValue
+        else:
+            # For incoming citations, the desired URI's are the first and second variables.
+            # Note: see previous note.
+            citing = bindings[0].getElementsByTagName('uri')[0].firstChild.nodeValue
+            cited = bindings[1].getElementsByTagName('uri')[0].firstChild.nodeValue
+        
+        # Replace occurences of "%3A" by regular colon characters
+        citing = re.sub('%3A', ':', citing)
+        cited = re.sub('%3A', ':', cited)
+        
+        if(self.logName):
+            self.log += '\n\nCiting unit: ' + citing
+            self.log += '\nCited unit: ' + cited
+        
+        if not self.makeNetwork:    
+            # Get entity description for citing element and for cited one
+            citingEntity = self.entityDescription(citing)
+            citedEntity = self.entityDescription(cited)
+        else:
+            # Retrieve not only description, but also BWB and entity separately
+            citingData = self.entityDescription(citing, alsoBWBAndEntity = True)
+            citedData = self.entityDescription(cited, alsoBWBAndEntity = True)
+        
+        # If a network should be created and both URI's were parsed successfully,
+        # add an edge.
+        # Note: parallel edges aren't allowed, so if an edge already exists, it
+        # isn't added again.
+        if(self.makeNetwork and citingData and citedData):
+            
+            """
+            Adding the work URI, the bwb title
+            """
+            # Get work level URI's
+            citingWork = self.workLevelURI(citing, citingData[0])
+            citedWork = self.workLevelURI(cited, citedData[0])
+            
+            # Add work URI's to dictionary
+            self.workDictionary[citingData[0]] = citingWork
+            self.workDictionary[citedData[0]] = citedWork
+            
+            # If the title for the bwb's hasn't been saved yet, get it and add it
+            # to the dictionary of titles
+            if not citingData[1] in self.bwbTitles:
+                titleAndExpression = self.sparql.getLatestTitleAndExpressionForBWB(citingData[1])
+                if titleAndExpression:
+                    self.bwbTitles[citingData[1]] = titleAndExpression[1]
+                else:
+                    self.bwbTitles[citingData[1]] = citingData[1]
+
+            if not citedData[1] in self.bwbTitles:
+                titleAndExpression = self.sparql.getLatestTitleAndExpressionForBWB(citedData[1])
+                if titleAndExpression:
+                    self.bwbTitles[citedData[1]] = titleAndExpression[1]
+                else:
+                    self.bwbTitles[citedData[1]] = citedData[1]
+            
+            # Add human friendly entity to dictionary if it doesn't exist yet
+            if not citingData[0] in self.humanDescription:
+                self.humanDescription[citingData[0]] = self.humanDescriptionForEntity(citingData[2])
+            if not citedData[0] in self.humanDescription:
+                self.humanDescription[citedData[0]] = self.humanDescriptionForEntity(citedData[2])
+            
+            # Add the edge
+            self.G.add_edge(citingData[0], citedData[0])    
+    
+    def workLevelURI(self, uri, entityDescription):
+        """
+        Given a entityDescription, a shorter work-level URI is returned
+        
+        @param uri: the original full expression URI
+        @param entityDescription: the entityDescription
+        @return: string with higher level work URI
+        """
+        # First get last two parts of entity
+        # Original entity, i.e. entity description without bwb might consist of
+        # more than two parts (like "hoofdstuk/kop/2"), but since we are matching
+        # against the original URI, the last two parts are enough to get everything
+        # except the part after the entity (containing uninteresting elements like
+        # al, li, etc.).
+        entity = re.findall('/[\w|\.|:]+/[\w|\.|:]+$', entityDescription)
+        # If there is a match, take first object
+        if entity:
+            entity = entity[0]
+        # Else we are dealing with a BWB only
+        else:
+            entity = ''
+        
+        # Take everything from original expression URI, except parts after entity description
+        workURI = re.findall('^.*' + entity, uri)
+        return workURI
+    
+    def entityDescription(self, citation, alsoBWBAndEntity = False):
+        """
+        Given a URI, creates and returns a shorter description of the entity,
+        ready for use as node name for the network.
+        
+        @param citation: the citation URI (string)
+        @return: the new, shorter description (string), or False if parsing
+            wasn't successful. If alsoBWBAndEntity is True, then a list of the
+            format [entityDescription, BWB, entity] is returned.
+        """
+        
+        # First, retrieve the BWB number
+        BWB = self.getBWBForCitation(citation)
+        if not BWB:
+            return False
+          
+        entity = self.getEntityForCitation(citation)
+            
+        if BWB and (entity or entity == ''):
+            if(self.logName):
+                self.log += '\nCited BWB/entity: ' + BWB + entity
+            if alsoBWBAndEntity:
+                # Returns not only the description, but also the BWB and
+                # the entity separately (in list)
+                return [BWB + entity, BWB, entity]
+            else:
+                # Just return the BWB/entity description
+                return BWB + entity
+            
+        else:
+            # The citation pattern wasn't recognized.
+            # Return False and set |encounteredUnknownPattern| to True.
+            self.encounteredUnknownPattern = True
+            print 'Unknown cited pattern: ' + citation
+            if(self.logName):
+                self.log += '\nUnknown cited pattern'
+                
+            return False
+    
+    def humanDescriptionForEntity(self, entity):
+        """
+        Returns entity with white spaces instead of slashes.
+        
+        @param entity: the entity
+        """
+        return re.sub('/', ' ', entity)
+    
+    def getBWBForCitation(self, citation):
+        """
+        Returns the bwb number for given reference.
+        
+        @param citation: the citation URI.
+        @return: the bwb number (string) or false if not found.
+        """
+        BWB = re.findall('BWBR\d{7}', citation)
+        if BWB.__len__() > 0:
+            # If the BWB was found, take it
+            BWB = BWB[0]
+        elif re.findall('BWBW\d{5}', citation).__len__() > 0:
+            # Else if the citing/cited entity has a BWBW\d{5} pattern,
+            # retrieve that one
+            BWB = re.findall('BWBW\d{5}', citation)[0]    
+        else:
+            # Unknown BWB pattern
+            print '\nCritical: cited has no BWB:\n' + citation
+            return False
+        
+        return BWB
+    
+    def getEntityForCitation(self, citation):
+        """
+        Finds and returns the enity part of the shorter description
+        of "getEntityDescription".
+        
+        @param citation: the citation
+        @return: the entity (False if none matched)
+        """
+        entity = False
+        # Find the first match and handle accordingly.
+        # The order is very important, putting a higher level
+        # (e.g. hoofdstuk) before a lower level entity (e.g. artikel)
+        # will result in many lower level entities being wrongly
+        # abstracted to the higher level.
+        if re.search('BWBR\d{7}$', citation):
+            # If the cited entity is an entire BWB, then the entity
+            # is empty.
+            entity = ''
+        elif citation.find('/bijlage/') > -1:
+            entity = self.handleBijlage(citation)
+        elif citation.find('/titeldeel/') > -1:
+            entity = self.handleTiteldeel(citation)
+        elif citation.find('/considerans/') > -1:
+            entity = self.handleConsiderans(citation)
+        elif citation.find('/artikel/') > -1:
+            entity = self.handleArtikel(citation)
+        elif citation.find('/hoofdstuk/') > -1:
+            entity = self.handleHoofdstuk(citation)
+        elif citation.find('/circulaire.divisie/') > -1:
+            entity = self.handleCirculaireDivisie(citation)
+        elif citation.find('/circulaire/') > -1:
+            entity = self.handleCirculaire(citation)
+        elif citation.find('/regeling/') > -1:
+            entity = self.handleRegeling(citation)
+        elif citation.find('/paragraaf/') > -1:
+            entity = self.handleParagraaf(citation)
+        elif citation.find('/afdeling/') > -1:
+            entity = self.handleAfdeling(citation)
+        elif citation.find('/deel/') > -1:
+            entity = self.handleDeel(citation)
+        elif citation.find('/wijzig-artikel/') > -1:
+            entity = self.handleWijzigArtikel(citation)
+        elif re.search('BWBR\d{7}/nl/', citation):
+            # If this is an expression with only BWB, entity is empty
+            entity = ''        
+        
+        return entity
+    
+    def handleArtikel(self, ref):
+        artikel = ref.split('artikel/')[1].split('/')[0]
+        
+        return '/artikel/' + artikel
+    
+    def handleConsiderans(self, ref):
+        considerans = ref.split('considerans/')[1].split('/')[0]
+        
+        return '/considerans/' + considerans
+    
+    def handleHoofdstuk(self, ref):
+        hoofdstuk = ref.split('hoofdstuk/')[1].split('/')[0]
+        
+        # If there is a 'kop' in the URI, add it to the 'hoofdstuk'
+        if ref.find('/kop/') > -1:
+            kop = self.handleKop(ref)
+            return '/hoofdstuk/' + hoofdstuk + kop
+        else:
+            return '/hoofdstuk/' + hoofdstuk
+    
+    def handleKop(self, ref):
+        try:
+            kop = ref.split('/kop/')[1].split('/')[0]
+        except IndexError:
+            print 'Kop index error for ref: ' + ref
+            return False
+            
+        return '/kop/' + kop
+        
+    def handleBijlage(self, ref):
+        """
+        A bijlage can contain 'artikel' or 'kop' instances. If so,
+        these are to be added to '/bijlage/'
+        """
+        bijlage = ref.split('bijlage/')[1].split('/')[0]
+        
+        if ref.find('artikel') > -1:
+            artikel = self.handleArtikel(ref)
+            return '/bijlage/' + bijlage + artikel
+        elif ref.find('/kop/') > -1:
+            kop = self.handleKop(ref)
+            return '/bijlage/' + bijlage + kop
+        else:
+            return '/bijlage/' + bijlage
+        
+    def handleTiteldeel(self, ref):
+        titeldeel = ref.split('titeldeel/')[1].split('/')[0]
+        
+        return '/titeldeel/' + titeldeel
+    
+    def handleAfdeling(self, ref):
+        afdeling = ref.split('afdeling/')[1].split('/')[0]
+        
+        return '/afdeling/' + afdeling
+    
+    def handleParagraaf(self, ref):
+        paragraaf = ref.split('paragraaf/')[1].split('/')[0]
+        
+        return '/paragraaf/' + paragraaf
+    
+    def handleCirculaireDivisie(self, ref):
+        circDiv = ref.split('circulaire.divisie/')[-1].split('/')[0]
+        return '/circulaire.divisie/' + circDiv
+    
+    def handleCirculaire(self, ref):
+        # First try to match a 'circulaire-tekst' pattern, return it
+        # if it exists.
+        circulaire = re.findall('/circulaire/[\w|\.]+/circulaire-tekst/[\w|\.]+', ref)
+        if len(circulaire) > 0:
+            return circulaire[0]
+        
+        # Else match a standard 'circulaire' pattern.
+        circulaire = re.findall('/circulaire/[\w|\.]+', ref)
+        if len(circulaire) > 0:
+            return circulaire[0]
+        else:
+            return False
+    
+    def handleRegeling(self, ref):
+        # First try to match a 'regeling-tekst' pattern, return it
+        # if it exists.
+        regeling = re.findall('/regeling/[\w|\.]+/regeling-tekst/[\w|\.]+', ref)
+        if len(regeling) > 0:
+            return regeling[0]
+        
+        # Else match a regular 'regeling' pattern.
+        regeling = re.findall('/regeling/[\w|\.]+', ref)
+        if len(regeling) > 0:
+            return regeling[0]
+        else:
+            return False
+    
+    def handleDeel(self, ref):
+        deel = re.findall('/deel/[\w|\.]+', ref)
+        if len(deel) > 0:
+            return deel[0]
+        else:
+            return False
+        
+    def handleWijzigArtikel(self, ref):
+        wa = ref.split('wijzig-artikel/')[1].split('/')[0]
+        return '/wijzig-artikel/' + wa
+    
+def main():
+    print 'Starting...'
+    
+#     G=nx.Graph()
+#     G.add_edges_from([(1,2),(1,3)])
+#     G.add_node("spam") 
+#     
+#     nx.draw(G)
+#     plt.show()
+
+    start_time = time.time()
+    citesParser = CitesParser(inOrOut = 'both', makeNetwork = True)
+    end_time = time.time() - start_time
+    
+    if(citesParser.getEncounteredUnknownPattern()):
+        print "\nWatch out: unknown pattern found, check log file!"
+    else:
+        print"\nAll citations handled successfully!"
+    print "\nDone! Elapsed time: " + str(int(end_time)) + " seconds"
+
+if __name__ == '__main__':
+    main()
