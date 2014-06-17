@@ -37,7 +37,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'overview',
-    'ajax'
+    'ajax',
+    'showGraph'
 )
 
 MIDDLEWARE_CLASSES = (

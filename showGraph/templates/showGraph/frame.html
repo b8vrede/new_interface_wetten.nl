@@ -1,0 +1,95 @@
+{% load wetten_extras %}
+{% load staticfiles %}
+<html>
+<head>
+<script src="{% static "js/jquery.min.js" %}"></script>
+<script src="{% static "js/cytoscape.min.js" %}"></script> 
+<script> 
+$(function(){ // on dom ready
+
+var cy = cytoscape({
+  container: $('#cy')[0],
+  style: cytoscape.stylesheet()
+    .selector('node')
+      .css({
+        'background-color':'#006'
+      })
+    .selector('node[type = "law"]')
+      .css({
+        'content': 'data(label)',
+        'background-color': '#F00',
+        'text-outline-color': '#666',
+        'cursor':'pointer'
+      })
+    .selector('node[type = "case"]')
+      .css({
+        'background-color': '#00F',
+        'text-outline-color': '#666',
+        'cursor':'pointer' 
+      })
+    .selector('node[type = "current"]')
+      .css({
+        'content': 'data(label)',
+        'background-color': '#0F0',
+        'text-outline-color': '#666',
+        'cursor':'pointer'
+      })
+    .selector('edge')
+      .css({
+        'opacity': '0.50',
+        'width': 'mapData(weight, 0, 100, 1, 6)',
+        'curve-style': 'haystack' // fast edges!
+      }),
+  
+  elements: {
+      nodes: [
+        {{nodeHtml|safe}}
+      ], 
+      
+      edges: [
+        {{edgeHtml|safe}}
+      ]
+    },
+  
+  layout: {
+    name: 'concentric',
+    fit: false,
+    padding: 20
+  },
+  
+  ready: function(){
+    window.cy = this;
+  }
+});
+
+cy.on('tap', 'node', function(){
+  location.href = this.data('href');
+});
+}); // on dom ready
+
+</script>
+<style>
+body { 
+  font: 14px helvetica neue, helvetica, arial, sans-serif;
+}
+
+#cy {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+</style>
+<title>Netwerk - Wetten.nl</title>
+</head>
+<body>
+<div id="cy"></div>
+
+</body>
+
+
+
+
+
+

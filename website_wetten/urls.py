@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from overview import views
 from ajax import views as ajaxViews
+from showGraph import views as showGraph
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -15,6 +16,7 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^$', include('overview.urls')),
     url(r'^overview/', include('overview.urls')),
+    url(r'^graph/', showGraph.showGraph),
     url(r'^ajax/law_text/$', ajaxViews.load_law_text),
     url(r'^ajax/related_law/$', ajaxViews.related_law),
     url(r'^(?P<expression>id/BWB[VR]\d{7}/(?:nl/)?\d{4}-\d{2}-\d{2}/data.xml)$', views.law, name='expression'),

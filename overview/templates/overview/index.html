@@ -13,7 +13,7 @@
 <script src="{% static "js/law.js" %}"></script>
 <script>
 var currentActive = "";
-
+var currentArticle = "";
 $(document).ready(function(){
 
 $( "#lawContainer hcontainer.artikel" ).click(function() {
@@ -23,11 +23,15 @@ $( "#lawContainer hcontainer.artikel" ).click(function() {
   currentActive = this;
   $( this ).addClass("active");
   
-  $(".selectedAtricle").text("Voor: \""+$( this ).find(".kop").text().trim()+"\"")
-  loadRelatedLaw("{{document}}", $( this ).find(".nr").text())
+  $(".selectedAtricle").text("Voor: \""+$( this ).find(".kop").text().trim()+"\"");
+  currentArticle = $( this ).find(".nr").text().trim();
+  loadRelatedLaw("{{document}}", $( this ).find(".nr").text());
+  
 });
 
-
+$( "#showGraph" ).click(function() {
+   location.href = "/graph/?expression="+encodeURIComponent('{{document}}')+"&article="+encodeURIComponent(currentArticle)
+});
 
 $( "#lawContainer inline.extref" ).click(function() {
   location.href = $( this ).attr("about").replace("http://doc.metalex.eu/id/", "/")
@@ -46,6 +50,9 @@ $(".selectedAtricle").text("Voor: \""+selectedArticleHeader.parent(".kop").text(
 currentActive = selectedArticleHeader.closest("hcontainer.artikel");
 currentActive.addClass("active");
 
+currentArticle = selectedArticleHeader.text().trim();
+
+
 loadRelatedLaw("{{document}}", "{{article}}")
 {% else %}
 loadRelatedLaw("{{document}}", "")
@@ -58,7 +65,7 @@ loadRelatedLaw("{{document}}", "")
 {% endif %}
 <script>
 $(document).ready(function(){
-$( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref" ).click(function() {
+$( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref, #showGraph" ).click(function() {
   $("#loading").show()
 });
 });
@@ -88,6 +95,11 @@ $( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref" ).cli
             {% endfor %}
           </ul>
         </li>
+        {% if BWB%}
+        <li><a id="showGraph" href="#">
+            Netwerk weergeven
+        </a></li>
+        {% endif %}        
       </ul>
     </div><!-- /.navbar-collapse -->
   </div><!-- /.container-fluid -->
@@ -130,6 +142,7 @@ $( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref" ).cli
                         {{meta|safe}}<BR>
                     {% endfor %}
                 {% endif %}
+                
             </div>
             
         </div>
