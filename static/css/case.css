@@ -42,6 +42,7 @@
 
 well#Container{
     margin-left: 350px;
+    padding: 0px;
 }
 
 #lawContainer{
@@ -52,6 +53,7 @@ well#Container{
     width: auto;
     color: #000;    
     display: block;
+    padding: 18px;
 }
 
 #lawContainer ns0\:title, #lawContainer ns0\:bridgehead{
@@ -62,10 +64,13 @@ well#Container{
     display: block;
 }
 
-#lawContainer ns0\:paragroup, ns0\:parablock{
+#lawContainer ns0\:paragroup, ns0\:parablock, ns0\:para{
     line-height: 20px;
     display: block;
     margin-bottom: 10px;
+}
+#lawContainer ns0\:parablock > ns0\:para{
+    margin-bottom: 0px;
 }
 
 #lawContainer .ref{

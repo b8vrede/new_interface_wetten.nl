@@ -18,12 +18,7 @@ import urllib
 def law(request, bwb = 'BWBR0011823', article = '', expression='', ref=''):
     errors = []
     sparqlHelper = sparql.SparqlHelper()
-    # List of BWB's in the subset
-    bwbDocuments = ['BWBR0011823',
-                    'BWBR0005537',
-                    'BWBV0001000',
-                    'BWBR0011825',
-                    'BWBV0001002']
+   
     if ref:
         ref = "http://doc.metalex.eu/id/"+ref
         work = sparqlHelper.getCitedWorkForReference(ref)
@@ -112,6 +107,10 @@ def read_ecli_files():
     return glob.glob(filelocation)
     
 def ecli(request, ecli):
+    sparqlHelper = sparql.SparqlHelper()
+    bwb_links = []
+    for bwbDocument in bwbDocuments:
+            bwb_links.append(sparqlHelper.getLatestTitleAndExpressionForBWB(bwbDocument))
     errors = []
     bwb_counter = defaultdict(int)
     files = read_ecli_files()
@@ -180,6 +179,7 @@ def ecli(request, ecli):
                    'errors': errors,
                    'Content': ECLItext,
                    'BWB_list': bwb_list,
+                   'bwb_links': bwb_links,
                    'Header': ecli,
                    'ECLI': ecli,
                    'metadata': metadata,
@@ -228,10 +228,18 @@ def ecli(request, ecli):
         context = {
                    'errors': errors,
                    'Header': ecli,
+                   'bwb_links': bwb_links,
                    'ECLI': ecli,
                    'Content': ECLItext,
                    'metadata': metadata,
                    'relatedCases': relatedCases,
                    }
         return render(request, 'overview/index.html', context)
+        
+ # List of BWB's in the subset
+bwbDocuments = ['BWBR0011823',
+                'BWBR0005537',
+                'BWBV0001000',
+                'BWBR0011825',
+                'BWBV0001002']
     
