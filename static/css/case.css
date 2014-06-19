@@ -5,9 +5,9 @@
     position: fixed;
     margin: 0px;
     height: 100%;
-    width: 350px;
+    width: inherit;
     overflow-y:auto;
-    padding-bottom: 50px;
+    padding-bottom: 75px;
 }
 
 #loading {

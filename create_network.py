@@ -87,6 +87,8 @@ def get_local_network(current_node_expression):
         print "FAILED to get work level from {}!".format(current_node_expression)
         return 0
     
+    print current_node
+    print current_node_expression
     # Init a boolean to indicate whether a graph was generated at any point    
     current_found = False 
     
@@ -97,7 +99,8 @@ def get_local_network(current_node_expression):
         current_found = True
         
         # Look for a local graph at increasing distance from the center, short distance mean that a ref is more common
-        for r in range(1,20,1):
+        rangeArray = [1,3,7,10,15,20]
+        for r in rangeArray:
             # Get a local graph with distance r/10 (so r=1 means radius 0.1 or 10 references)
             local_graph = ego_graph(CaseG, current_node, radius = (r/float(10)), center = True, undirected = True, distance='weight')
             
@@ -111,7 +114,7 @@ def get_local_network(current_node_expression):
             # If the loop hasn't be broken the next larger radius is tried (until we are at the max range)
         
         # Print the chosen local graph stats
-        print "local -> CASE LAW\t\tNodes: {} Edges: {}".format(len(local_graph.nodes()), len(local_graph.edges()))
+        # print "local -> CASE LAW\t\tNodes: {} Edges: {}".format(len(local_graph.nodes()), len(local_graph.edges()))
     
     # If the expression level node is in the legislation graph, generate a graph
     if "<"+current_node_expression+">" in LegislationG.nodes():
@@ -121,7 +124,6 @@ def get_local_network(current_node_expression):
         local_leg = ego_graph(LegislationG, "<"+current_node_expression+">", radius = 1, center = True, undirected = True)
         
         # Rename the nodes to the work level (or format them to our work level format)
-        renamedict = {}
         for node_expression_level in local_leg.nodes():
             if get_work_level(node_expression_level) is not None:
                 renamedict[node_expression_level] = get_work_level(node_expression_level)
@@ -130,7 +132,7 @@ def get_local_network(current_node_expression):
         local_leg = nx.relabel_nodes(local_leg,renamedict, copy=False)
         
         # Print the local graph stats
-        print "local -> LEGISLATION\t\tNodes: {} Edges: {}".format(len(local_leg.nodes()), len(local_leg.edges()))    
+        # print "local -> LEGISLATION\t\tNodes: {} Edges: {}".format(len(local_leg.nodes()), len(local_leg.edges()))    
         
         # If there is already a case law graph merge them
         if current_found:           
@@ -146,7 +148,7 @@ def get_local_network(current_node_expression):
     
     # If we generated a graph return it or return None and print a message to the console
     if not current_found:
-        print current_node
+        # print current_node
         return None
     elif current_found:
         return local_graph
@@ -232,7 +234,7 @@ build_network()
 case_law_regex = re.compile('<http://rechtspraak.nl')
 law_regex = re.compile('<http://doc.metalex.eu')
 case_law_rewrite = re.compile("<(.*(ECLI:[^:]+:[^:]+:\d{4}:[^/\"\'>]+).*)>")
-law_rewrite = re.compile("<?(.*?(/(BWB[VR]\d{7}).*?(?:/artikel/([^/>]+).*?)?))(?:>$|$)")
+law_rewrite = re.compile("<?(.*?(/(BWB[VR]\d{7})[^>]*?(?:/artikel/([^/>]+)[^>]*?)?))")
 
 # Compile the regex for extraction of the work level node from the expression level node
 BWBarticle_regexp = re.compile("(BWB[VR]\d{7}).*?/artikel/([^/]+)")

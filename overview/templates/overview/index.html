@@ -12,6 +12,8 @@
 <link href="{% static "css/law.css" %}" rel="stylesheet">
 <script src="{% static "js/law.js" %}"></script>
 <script>
+
+var versions = [{% for date in dates %}"{{date}}",{% endfor %}];
 var currentActive = "";
 var currentArticle = "";
 $(document).ready(function(){
@@ -26,7 +28,6 @@ $( "#lawContainer hcontainer.artikel" ).click(function() {
   $(".selectedAtricle").text("Voor: \""+$( this ).find(".kop").text().trim()+"\"");
   currentArticle = $( this ).find(".nr").text().trim();
   loadRelatedLaw("{{document}}", $( this ).find(".nr").text());
-  
 });
 
 $( "#showGraph" ).click(function() {
@@ -34,9 +35,11 @@ $( "#showGraph" ).click(function() {
 });
 
 $( "#lawContainer inline.extref" ).click(function() {
-  location.href = $( this ).attr("about").replace("http://doc.metalex.eu/id/", "/")
+   location.href = $( this ).attr("about").replace("http://doc.metalex.eu/id/", "/")
 });
-
+$( ".versionLink").click(function(){
+   location.href = $( this ).attr("link")+"?artikel="+encodeURIComponent(currentArticle)
+});
 
 {% if article %}
 var selectedArticleHeader = $(".label:contains('Artikel')+.nr").filter(function() {
@@ -68,6 +71,9 @@ $(document).ready(function(){
 $( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref, #showGraph" ).click(function() {
   $("#loading").show()
 });
+    $("#loading>.loading-panel").click(function() {
+        $("#loading").hide()
+    });
 });
 </script>
 <title>{% if ECLI %}{{ECLI}} - {% endif %}{% if BWB_name and BWB %}{{BWB_name}} ({{BWB}}) - {% endif %}Wetten.nl</title>
@@ -81,7 +87,7 @@ $( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref, #show
       <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
         <span class="sr-only">Toggle navigation</span>
       </button>
-      <a class="navbar-brand" href="#">Wetten.nl</a>
+      <a class="navbar-brand" href="#">Wetten Portaal</a>
     </div>
     
     <!-- Collect the nav links, forms, and other content for toggling -->
@@ -105,7 +111,7 @@ $( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref, #show
   </div><!-- /.container-fluid -->
 </nav>
 <div class="row" id="bodyContainer">
-    <div class="col-xs-4 col-md-4 col-lg-3">
+    <div id="panelCol" class="col-xs-4 col-md-4 col-lg-3">
         <div class="panelwrapper">
         {% if errors %}
             {% for error in errors %}
@@ -118,7 +124,7 @@ $( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref, #show
             </div>
             <div class="panel-body">
                 {% if BWB%}<b>BWB:</b> {{BWB}}<BR>{% endif %}
-                {% if dates%}<b>Versie:</b> 
+                {% if dates%}<b>Versie van de wet:</b> 
                 <div class="btn-group">
                 <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                 {{currentDateSelection}}<span class="caret"></span>
@@ -126,17 +132,19 @@ $( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref, #show
                 <ul class="dropdown-menu" role="menu">
                 {% for date in dates %}
                     {% if date == currentDateSelection %}
-                        <li class='active historySelection'><a href="#">
+                        <li class='active historySelection'><a class="versionLink" link="{{ expressions|get:date }}">
                                 {{ date }}
                         </a></li>
                     {% else %}
-                        <li class='historySelection'><a href="{{ expressions|get:date }}">
+                        <li class='historySelection'><a class="versionLink" link="{{ expressions|get:date }}">
                                 {{ date }}
                         </a></li>
                     {% endif %}
                 {% endfor %}
                 </ul>
-                </div><BR>{% endif %}
+                </div><BR>
+                <div id="articleHistory"></div>
+                {% endif %}
                 {% if ECLI %}
                     {% for meta in metadata %}
                         {{meta|safe}}<BR>
@@ -203,6 +211,7 @@ $( ".historySelection, #lawContainer inline.extref, .menuSelection, a.ref, #show
         </div>
         {% endif %}
         </div>
+        
     </div>
         <div class="col-xs-8 col-md-8 col-lg-9">
         <div class="well" id="Container">

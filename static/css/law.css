@@ -1,13 +1,15 @@
 #bodyContainer{
     padding-top: 65px;
 }
+#panelCol {
+}
 .panelwrapper {
     position: fixed;
     margin: 0px;
     height: 100%;
-    width: 350px;
+    width: inherit;
     overflow-y:auto;
-    padding-bottom: 50px;
+    padding-bottom: 75px;
 }
 .selectedAtricle {
     font-size: 0.8em;

@@ -16,19 +16,31 @@ var cy = cytoscape({
       })
     .selector('node[type = "law"]')
       .css({
+        'width': '10px',
+        'height': '10px',
         'content': 'data(label)',
         'background-color': '#F00',
         'text-outline-color': '#666',
-        'cursor':'pointer'
+        'cursor':'pointer',
+        'font-size': '5px',
+        'min-zoomed-font-size': '10px',
       })
     .selector('node[type = "case"]')
       .css({
+        'width': '10px',
+        'height': '10px',
+        'content': 'data(label)',
+        'font-size': '5px',
+        'min-zoomed-font-size': '10px',
         'background-color': '#00F',
         'text-outline-color': '#666',
         'cursor':'pointer' 
       })
     .selector('node[type = "current"]')
       .css({
+        'width': '20px',
+        'height': '20px',
+        'font-size': '10px',
         'content': 'data(label)',
         'background-color': '#0F0',
         'text-outline-color': '#666',
@@ -52,15 +64,19 @@ var cy = cytoscape({
     },
   
   layout: {
-    name: 'concentric',
-    fit: false,
-    padding: 20
+    name: 'preset',
+    fit: true,
+    positions: { {{positionsHtml|safe}} },
+    padding: 10,
   },
   
   ready: function(){
     window.cy = this;
   }
 });
+
+cy.userPanningEnabled(true)
+cy.boxSelectionEnabled(false)
 
 cy.on('tap', 'node', function(){
   location.href = this.data('href');

@@ -10,6 +10,7 @@ function parseJsonLaw(json){
     html+="</div>";
     return html;
 }
+
 function loadRelatedLaw(expressie, article){
     $("#relLaw, #relCaselaw").html('<a href="#" class="list-group-item list-group-item-info"><span class="glyphicon glyphicon-info-sign"></span> Referenties aan het doorzoeken...</a>');
     request = $.ajax({
@@ -17,6 +18,28 @@ function loadRelatedLaw(expressie, article){
       dataType: "json",
       type: "GET",
       data: { expression: expressie, article: article.trim() },
+      cache: true
+    })
+    request.done(function( data ) {
+        $("#relLaw").html(parseJsonLaw(data['law']));
+        $("#relCaselaw").html(parseJsonLaw(data['case']));
+        });
+    request.fail(function() {
+        $("#relLaw, #relCaselaw").html('<a href="#" class="list-group-item list-group-item-danger"><span class="glyphicon glyphicon-fire"></span> Er is een fout onstaan tijdens het laden.</a>');
+        });
+}
+function searchHistory(expression){
+    
+    console.log ( expression );
+    return true;
+}
+function searchHistory(expressie, article){
+    $("#articleHistory").html('<a href="#" class="list-group-item list-group-item-info"><span class="glyphicon glyphicon-info-sign"></span> Referenties aan het doorzoeken...</a>');
+    request = $.ajax({
+      url: "/ajax/history/",
+      dataType: "json",
+      type: "GET",
+      data: { expression: expressie, versions: versions.join(",  ") },
       cache: true
     })
     request.done(function( data ) {

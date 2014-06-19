@@ -34,6 +34,8 @@ def law(request, bwb = 'BWBR0011823', article = '', expression='', ref=''):
             if m:
                 article = m.group(1)
     elif expression:
+        if request.GET.__contains__("artikel"):
+            article = request.GET["artikel"]
         document = "http://doc.metalex.eu/"+expression
         bwb = extract_BWB(expression)
         print bwb

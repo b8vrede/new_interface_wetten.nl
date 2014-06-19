@@ -6,6 +6,7 @@ import networkx
 import re
 import create_network as citeNetworks
 
+
 def default(request):
     return redirect("/")
     
@@ -13,7 +14,28 @@ def load_law_text(request):
     metalexData = urllib2.urlopen(request.GET['doc'])
     metalexXML = metalexData.read()
     return HttpResponse(metalexXML)
-
+    
+def article_history(request):
+    output = "Historie:<BR><BR>"
+    mapping = [('januari', '01'), ('februari', '02'), ('maart', '03'), ('april', '04'), ('mei', '05'), ('juni', '06'), ('juli', '07'), ('augustus', '08'), ('september', '09'), ('oktober', '10'), ('november', '11'), ('december', '12') ]
+    if request.REQUEST.__contains__("expression"):
+        formatURL = request.REQUEST['expression'].replace("metalex.eu/id/","metalex.eu/doc/")+"/data.xml"
+        formatURL = re.sub("\d{4}-\d{2}-\d{2}", "{}", formatURL)
+        versions = request.REQUEST['versions'].split(", ")
+        for version in versions:
+            for k, v in mapping:
+                version = version.replace(k, v)
+            m = re.search("(\d{1,2}) (\d{2}) (\d{4})", version)
+            correctVersion = m.group(3)+"-"+m.group(2)+"-"
+            if len(m.group(1)) == 1:
+                correctVersion += "0"
+            correctVersion += m.group(1)
+            url = formatURL.format(correctVersion)
+            metalexData = urllib2.urlopen(url)
+            versionXML = metalexData.read()
+            output += versionXML + "<BR><BR>"
+        return HttpResponse(output)
+        
 def related_law(request):
     currentNode = None
     if request.GET.__contains__("expression"):
@@ -23,7 +45,8 @@ def related_law(request):
         currentNode = "http://doc.metalex.eu/id/"+m.group(1)
         if request.GET.__contains__("article") and request.GET["article"]:
             currentNode += "/artikel/" + request.GET["article"]
-    
+        currentNode += "/"+m.group(2)
+        
     if currentNode is not None:
         localGraph = citeNetworks.get_local_network(currentNode)
         if localGraph is not None:
