@@ -12,8 +12,7 @@ urlpatterns = patterns('',
     # Examples:
     # url(r'^$', 'website_wetten.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
-    
-    url(r'^admin/', include(admin.site.urls)),
+
     url(r'^$', include('overview.urls')),
     url(r'^overview/', include('overview.urls')),
     url(r'^graph/', showGraph.showGraph),
