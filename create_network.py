@@ -19,10 +19,10 @@ def build_network():
     global LegislationG
     
     # Read case law edge file
-    CaseG = nx.read_weighted_edgelist("caselaw.edges") # , create_using=nx.DiGraph() <-- Used for creating directional graphs
+    CaseG = nx.read_weighted_edgelist("/var/www/wettenbart/caselaw.edges") # , create_using=nx.DiGraph() <-- Used for creating directional graphs
         
     # Read legislation edge file
-    LegislationG = nx.read_edgelist("laws.edges") # , create_using=nx.DiGraph() <-- Used for creating directional graphs
+    LegislationG = nx.read_edgelist("/var/www/wettenbart/laws.edges") # , create_using=nx.DiGraph() <-- Used for creating directional graphs
 
     
 # Checks whether a graph contains at N nodes with a BWB thus a law 
@@ -86,9 +86,7 @@ def get_local_network(current_node_expression):
         # Return 0 and print a error message to the console as the node doesn't contain a BWB
         print "FAILED to get work level from {}!".format(current_node_expression)
         return 0
-    
-    print current_node
-    print current_node_expression
+        
     # Init a boolean to indicate whether a graph was generated at any point    
     current_found = False 
     
@@ -105,7 +103,7 @@ def get_local_network(current_node_expression):
             local_graph = ego_graph(CaseG, current_node, radius = (r/float(10)), center = True, undirected = True, distance='weight')
             
             # Print the graph stats for debugging purposes
-            print "local ({}) -> CASE LAW\t\tNodes: {} Edges: {}".format((r/float(10)), len(local_graph.nodes()), len(local_graph.edges()))
+            #print "local ({}) -> CASE LAW\t\tNodes: {} Edges: {}".format((r/float(10)), len(local_graph.nodes()), len(local_graph.edges()))
             
             # If the current graph contains at least N law nodes break the loop and thus use the current graph
             if contains_law(local_graph, current_node, n=5):
@@ -201,7 +199,7 @@ def select_highest(central_list, current_node, top = 5):
                         top_law[len(top_law)] = {"label" : m.group(3)+clean_article, "link": m.group(2), "article":m.group(4), "bwb" : m.group(3), "node": node}
                         
                         # Print to console for debugging
-                        print "L{}. Best match  {}\n\tScore: {:.15f}".format(len(top_law), node, central_list[node])
+                        # print "L{}. Best match  {}\n\tScore: {:.15f}".format(len(top_law), node, central_list[node])
                         
             # If it is a case law node, not the current node and we still need a case law for our top N
             if case_law_regex.match(node.encode('ascii','ignore')) is not None and node is not current_node and len(top_case) < top:
@@ -217,7 +215,7 @@ def select_highest(central_list, current_node, top = 5):
                     top_case[len(top_case)] = {"label" : m.group(2), "link": "/"+m.group(2), "node": node}
                 
                 # Print to console for debugging
-                print "C{}. Best match  {}\n\tScore: {:.15f}".format(len(top_case), node, central_list[node])
+                # print "C{}. Best match  {}\n\tScore: {:.15f}".format(len(top_case), node, central_list[node])
     
     # Add the 2 dictionaries to a parent dict
     top_lists["case"] = top_case
@@ -241,5 +239,6 @@ BWBarticle_regexp = re.compile("(BWB[VR]\d{7}).*?/artikel/([^/]+)")
 BWB_regexp = re.compile("(BWB[VR]\d{7})")
 
 # Print the global graph stats
-print "CASE LAW\t\tNodes: {} Edges: {}".format(len(CaseG.nodes()), len(CaseG.edges()))
-print "LEGISLATION\t\tNodes: {} Edges: {}".format(len(LegislationG.nodes()), len(LegislationG.edges()))    
+# print "CASE LAW\t\tNodes: {} Edges: {}".format(len(CaseG.nodes()), len(CaseG.edges()))
+# print "LEGISLATION\t\tNodes: {} Edges: {}".format(len(LegislationG.nodes()), len(LegislationG.edges()))
+print "Edges loaded"    

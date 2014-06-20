@@ -37,3 +37,4 @@ Icon
 ECLIs/
 *.pyc
 *.sqlite3
+laws_old.edges

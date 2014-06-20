@@ -17,7 +17,6 @@ def showGraph(request):
         if request.GET.__contains__("article") and request.GET["article"]:
             currentNode += "/artikel/" + request.GET["article"]
         currentNodeWithoutDate = currentNode
-        print currentNode
         currentNode += "/"+m.group(2)
     if currentNode is not None:
         localGraph = citeNetworks.get_local_network(currentNode)
@@ -56,7 +55,6 @@ def showGraph(request):
             edgeHtml = ""        
             for edge in localGraph.edges(data=True):
                 if len(edge[2]) > 0:
-                    print edge
                     weight = 1 / edge[2]["weight"]
                 else:
                     weight = 1

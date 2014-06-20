@@ -38,7 +38,6 @@ def law(request, bwb = 'BWBR0011823', article = '', expression='', ref=''):
             article = request.GET["artikel"]
         document = "http://doc.metalex.eu/"+expression
         bwb = extract_BWB(expression)
-        print bwb
         bwb_info = sparqlHelper.getLatestTitleAndExpressionForBWB(bwb)
         bwb_name = bwb_info[1]
     elif bwb:
@@ -54,8 +53,6 @@ def law(request, bwb = 'BWBR0011823', article = '', expression='', ref=''):
         bwb_links = []
         for bwbDocument in bwbDocuments:
             bwb_links.append(sparqlHelper.getLatestTitleAndExpressionForBWB(bwbDocument))
-        
-        print document
         metalexData = urllib2.urlopen(document)
         metalexXML = metalexData.read()
         metalexData.close()
@@ -149,7 +146,6 @@ def ecli(request, ecli):
         relatedCases = []
         for rel in relations:
             relEcli = rel.get('{https://e-justice.europa.eu/ecli}resourceIdentifier')
-            print rel.keys()
             relText = rel.text
             relatedCases.append('<a href="/'+str(relEcli)+'" class="list-group-item">'+relText+'</a>')
         
@@ -223,7 +219,6 @@ def ecli(request, ecli):
         relatedCases = []
         for rel in relations:
             relEcli = rel.get('{https://e-justice.europa.eu/ecli}resourceIdentifier')
-            print rel.keys()
             relText = rel.text
             relatedCases.append('<a href="/'+str(relEcli)+'" class="list-group-item">'+relText+'</a>')
             
