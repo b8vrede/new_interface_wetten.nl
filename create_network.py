@@ -1,6 +1,5 @@
 import re
 from networkx import *
-import argparse
 import urllib
 # An example of how the related nodes can be calculated
 def get_betweenness_centrality(local_graph, current_node, endpoints=True):
